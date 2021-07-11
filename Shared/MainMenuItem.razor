@@ -1,0 +1,75 @@
+@inherits LayoutComponentBase
+@using Microsoft.AspNetCore.Authentication
+@using Microsoft.AspNetCore.Components.Authorization
+@inject AuthenticationStateProvider asp
+@inject NavigationManager Navigation
+
+
+    <CascadingAuthenticationState>
+        <AuthorizeView>
+            <Authorized>
+                <li class="nav-item">
+                    <button class="nav-link btn btn-light" @onclick="ChPassword" >
+                        <span class="oi oi-person" aria-hidden="true"></span>
+                        @context.User.Identity.Name!
+                    </button>
+                </li>
+                <li class="nav-item">
+                    <button class="nav-link btn btn-light" @onclick="GoHome">
+                        <span class="oi oi-home" aria-hidden="true"></span> خانه
+                    </button>
+                </li>
+                <li class="nav-item">
+                    <button class="nav-link btn btn-light" @onclick="NewOrder">
+                        <span class="oi oi-plus" aria-hidden="true"></span> سفارش جدید
+                    </button>
+                </li>
+                <li class="nav-item">
+                    <button class=" nav-link btn btn-light" @onclick="ShowFactors">
+                        <span class="oi oi-list-rich" aria-hidden="true"></span> سفارش ها
+                    </button>
+                </li>
+                <li class="nav-item">
+                    <button class="nav-link btn btn-light" @onclick="BeginSignOut">
+                        <span class="oi oi-account-logout" aria-hidden="true"></span> خروج
+                    </button>
+                </li>
+            </Authorized>
+            <NotAuthorized>
+                <li class="nav-item">
+                    <button class="nav-link btn btn-light" @onclick="BeginSignIn">
+                        <span class="oi oi-account-logout" aria-hidden="true"></span>ورود
+                    </button>
+                </li>
+            </NotAuthorized>
+        </AuthorizeView>
+    </CascadingAuthenticationState>
+
+@code
+{
+    private async Task BeginSignOut(MouseEventArgs args)
+    {
+        await ((AuthState.myAuthStateProvider)asp).MarkUserAsLogOuted();
+        Navigation.NavigateTo("/login");
+    }
+    private void ShowFactors()
+    {
+        Navigation.NavigateTo("/Factorllist");
+    }
+    private void NewOrder()
+    {
+        Navigation.NavigateTo("/Newfactor");
+    }
+    private void GoHome()
+    {
+        Navigation.NavigateTo("/");
+    }
+    private void ChPassword()
+    {
+        Navigation.NavigateTo("/ChangePassword");
+    }
+    private void BeginSignIn(MouseEventArgs args)
+    {
+        Navigation.NavigateTo("/login");
+    }
+}

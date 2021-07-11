@@ -1,0 +1,120 @@
+﻿@font-face {
+	font-family: 'B Yekan';
+	src:url('../fonts/BYekan.eot');
+	src:url('../fonts/BYekan.woff') format('woff'),
+		url('../fonts/BYekan.ttf') format('truetype');
+	font-weight: normal; 
+	font-style: normal;
+}
+
+@font-face {
+    font-family: 'Sahel';
+    src: url('../fonts/Sahel.eot');
+    src: url('../fonts/Sahel.woff') format('woff'), 
+         url('../fonts/Sahel.ttf') format('truetype');
+    font-weight: normal;
+    font-style: normal;
+}
+.myTelegramTourBoxs {
+    -webkit-box-sizing: content-box;
+    -moz-box-sizing: content-box;
+    box-sizing: content-box;
+    margin-top: 10px;
+    padding: 20px;
+    overflow: hidden;
+    border: none;
+    -webkit-border-radius: 15px;
+    border-radius: 15px;
+    font: normal 16px/1 "B Yekan", Times, serif;
+    color: rgb(0, 0, 0);
+    text-align: center;
+    -o-text-overflow: ellipsis;
+    text-overflow: ellipsis;
+    background: #ffffff;
+    -webkit-box-shadow: 4px 4px 20px 1px rgba(0,0,0,0.3);
+    box-shadow: 4px 4px 20px 1px rgba(0,0,0,0.3);
+}
+
+.my-map {
+    height:300px;
+    padding-top: 30px;
+    padding-bottom: 30px;
+    margin-bottom: 30px;
+    margin-top: 30px;
+    background-color: #eaeaea;
+    border-radius: 14px;
+}
+
+.myfont{
+    font-family:Sahel;
+    font-size: smaller;
+}
+
+.myImgAvd{
+    width:200px;
+    height:200px;
+    border-radius:10px 10px 10px 10px;
+}
+.myImgAvdSmall{
+    width:100px;
+    height:100px;
+    border-radius:5px 5px 5px 5px;
+}
+.myImgAvdSmall2{
+    width:70px;
+    height:70px;
+    border-radius:5px 5px 5px 5px;
+}
+.myImgDetails{
+    width:300px;
+    height:300px;
+    border-radius:10px 10px 10px 10px;
+}
+.myImgBlog{
+    width:100%;
+    height:300px;
+    border-radius:10px 10px 10px 10px;
+}
+
+.myImgBanner{
+    width:100%;
+    height:100px;
+}
+
+.rowMargin{ 
+    margin-top:5px;
+    margin-bottom:5px;
+}
+
+.TopBannerImg {
+    max-height: 500px;
+    width: 100%;
+    height: 50%;
+}
+
+.img-CircleUserProfile{
+    width:100px;
+    height:100px;
+    border-radius:50% 50% 50% 50%;
+}
+.img-UserName{
+    float:right;
+    position:absolute;
+    top:200px;
+    right:10%;
+}
+.img-BannersUser{
+    width:100%;
+    height:300px;
+}
+
+#img-botton-Navbar{
+    width: 50px;
+    height: 50px;
+}
+
+.center {
+    margin: auto;
+    width: 50%;
+    padding: 10px;
+}

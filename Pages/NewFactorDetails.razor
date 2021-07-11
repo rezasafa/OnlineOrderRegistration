@@ -1,0 +1,825 @@
+﻿@page "/NewfactorDetails/{Order_No}"
+@using Blazored.SessionStorage
+@inject ISessionStorageService sessionStorageService
+@inject NavigationManager Navigation
+@inject IJSRuntime JsRuntime
+<div>
+    <div>
+        <table>
+            <tbody>
+                <tr>
+                    <td>
+                        شماره سفارش
+                    </td>
+                    <td>
+                        <input type="text" class="form-control" value="@od.Order_No" readonly />
+                    </td>
+                    <td>
+                        تاریخ سفارش
+                    </td>
+                    <td>
+                        <input type="text" class="form-control" value="@od.Order_Date" readonly />
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        شرح
+                    </td>
+                    <td colspan="3">
+                        <input type="text" class="form-control" value="@od.Order_Desc" readonly />
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        حساب مشتری
+                    </td>
+                    <td>
+                        <input type="text" class="form-control" value="@od.Tafsil_No1" readonly />
+                    </td>
+                    <td colspan="2">
+                        <label>@Tafsil_Name_Show</label>
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        نام مشتری
+                    </td>
+                    <td colspan="2">
+                        <input type="text" class="form-control" Value="@od.Customer_Name" readonly />
+                    </td>
+                    <td>
+                        <button class="btn btn-outline-danger" @onclick="(()=> Open_OrderDoc())">ویرایش</button>
+                        <button class="btn btn-danger" @onclick="@DeleteOrder">حذف سفارش</button>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+    <div>
+        <table class="table">
+            <thead class="thead-dark">
+                <tr>
+                    <th>
+                        <button class="btn btn-info oi oi-plus" id="btnNewRow" @onclick="@Open"></button>
+                    </th>
+                    <th>
+                        ردیف
+                    </th>
+                    <th>
+                        کد کالا
+                    </th>
+                    <th>
+                        نام کالا
+                    </th>
+                    <th>
+                        شرح
+                    </th>
+                    <th>
+                        واحد کل
+                    </th>
+                    <th>
+                        تعداد کل
+                    </th> 
+                    <th>
+                        واحد جزء
+                    </th>
+                    <th>
+                        تعداد
+                    </th>
+                    <th>
+                        فی
+                    </th>
+                    <th>
+                        قیمت
+                    </th>
+                    <th>
+                        درصد تخفیف
+                    </th>
+                    <th>
+                        تخفیف
+                    </th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var item in lod)
+                {
+                    <tr @ondblclick="() => Open_EditDetails(item.Row)">
+                        <td>
+                            <button class="btn btn-danger oi oi-delete" @onclick="() => DelDetails(item.Row)"></button>
+                            <button class="btn btn-info oi oi-pencil" @onclick="() => Open_EditDetails(item.Row)"></button>
+                        </td>
+                        <td>@item.Row</td>
+                        <td>@item.Merch_Code</td>
+                        <td>@item.Merch_Name</td>
+                        <td>@item.Descr</td>
+                        <td>@item.MajorUnit</td>
+                        <td>@item.MQty</td>
+                        <td>@item.MinorUnit</td>
+                        <td>@item.Qty</td>
+                        <td>@String.Format("{0:N0}", item.Price)</td>
+                        <td>@String.Format("{0:N0}", item.Total)</td>
+                        <td>@item.Discount</td>
+                        <td>@String.Format("{0:N0}", item.Discount_Price)</td>
+                    </tr>
+                }
+                <tr style="background-color: black; color: white;">
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td>جمع</td>
+                    <td>@sum_MQty</td>
+                    <td></td> 
+                    <td>@sum_Qty</td>
+                    <td>@String.Format("{0:N0}", sum_Price)</td>
+                    <td>@String.Format("{0:N0}", Sum_Total)</td>
+                    <td></td>
+                    <td>@String.Format("{0:N0}", sum_Discount_Price)</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+@if (ShowBackdrop)
+{
+    <div class="modal-backdrop fade show"></div>
+}
+<div class="modal @ModalClass" tabindex="-1" role="dialog" style="display:@ModalDisplay">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">آرتیکل جدید</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close" @onclick="@Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <EditForm Model="mOrdDetls" OnSubmit="AddDetails">
+                    <table >
+                        <tr>
+                            <td>
+                                ردیف
+                            </td>
+                            <td>
+                                <InputNumber class="form-control" id="row" @bind-Value="@mOrdDetls.Row"/>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>
+                                کالا
+                            </td>
+                            <td>
+                            <InputText class="form-control" id="merchcode" list="listMerch" @onblur="@SetMerchName" @bind-Value="@mOrdDetls.Merch_Code" />
+                            <datalist id="listMerch">
+                                @foreach (var item in lmerch)
+                                {
+                                    <option value="@item.Merch_Code">@item.Merch_Name</option>
+                                }
+                            </datalist>
+                            <label>@Merch_Name</label>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>
+                                شرح
+                            </td>
+                            <td>
+                                <InputText class="form-control" id="desc" @bind-Value="@mOrdDetls.Descr" />
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>
+                                تعداد کل
+                            </td>
+                            <td>
+                                <InputNumber class="form-control" id="mqty" @onblur="@Kol_Change" @bind-Value="@mOrdDetls.MQty" />
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>
+                                تعداد جزء
+                            </td>
+                            <td>
+                                <InputNumber class="form-control" id="qty" @onblur="@Joz_Change" @bind-Value="@mOrdDetls.Qty" />
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>
+                                فی
+                            </td>
+                            <td>
+                                <InputNumber class="form-control" id="price" @bind-Value="@mOrdDetls.Price" readonly/>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>
+                                قیمت
+                            </td>
+                            <td>
+                                <InputNumber class="form-control" id="total" @bind-Value="@mOrdDetls.Total" readonly />
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>
+                                درصد تخفیف
+                            </td>
+                            <td>
+                                <InputNumber class="form-control" id="discount" @onblur="@Takhfif_Change" @bind-Value="@mOrdDetls.Discount" />
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>
+                                تخفیف
+                            </td>
+                            <td>
+                                <InputNumber class="form-control" id="discountprice" @bind-Value="@mOrdDetls.Discount_Price" readonly />
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>
+                                
+                            </td>
+                            <td>
+                                <button type="button" class="btn btn-danger" data-dismiss="modal" @onclick="() => Close()">لغو</button>
+                                <input type="submit" class="btn btn-success" value="ثبت">
+                            </td>
+                        </tr>
+                    </table>
+                </EditForm>   
+            </div>
+        </div>
+    </div>
+</div>
+<div class="modal @ModalClass_OrderDoc" tabindex="-1" role="dialog" style="display:@ModalDisplay_OrderDoc">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">ویرایش سفارش</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close" @onclick="@Close_OrderDoc">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <EditForm Model="@mod" OnValidSubmit="@UpdateOrderDocs">
+                    <DataAnnotationsValidator />
+                    <ValidationSummary />
+                    <table>
+                        <tbody>
+                            <tr>
+                                <td>
+                                    شماره سفارش
+                                </td>
+                                <td>
+                                    <InputText class="form-control" @bind-Value="@mod.Order_No" readonly />
+                                </td>
+                                <td>
+                                    تاریخ سفارش
+                                </td>
+                                <td>
+                                    <InputText class="form-control" @bind-Value="@mod.Order_Date" placeholder="@Tarikh" />
+                                    <ValidationMessage For="@(()=>mod.Order_Date)" />
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>
+                                    شرح
+                                </td>
+                                <td colspan="3">
+                                    <InputText class="form-control" @bind-Value="@mod.Order_Desc"  />
+                                    <ValidationMessage For="@(()=>mod.Order_Desc)" />
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>
+                                    حساب مشتری
+                                </td>
+                                <td>
+                                    <InputText class="form-control" list="listTafsil" @onblur="@SetTafsilName" @bind-Value="@mod.Tafsil_No1"  />
+                                    <ValidationMessage For="@(()=>mod.Tafsil_No1)" />
+                                    <datalist id="listTafsil">
+                                        @foreach(var item in LTafsil)
+                                        {
+                                            <option value="@item.Tafsil_No">@item.Tafsil_Name</option>
+                                        }
+                                    </datalist>
+                                </td>
+                                <td colspan="2">
+                                    <label>@Tafsil_Name</label>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>
+                                    نام مشتری
+                                </td>
+                                <td colspan="3">
+                                    <InputText class="form-control" @bind-Value="@mod.Customer_Name"  />
+                                </td>
+                            </tr>
+                            <tr>
+                                <td colspan="4">
+                                    <button type="button" class="btn btn-danger" data-dismiss="modal" @onclick="() => Close_OrderDoc()">لغو</button>
+                                    <input type="submit" class="btn btn-success" id="btnSave" value="ذخیره" /> 
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </EditForm>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="modal @ModalClass_EditDetails" tabindex="-1" role="dialog" style="display:@ModalDisplay_EditDetails">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">ویرایش آرتیکل</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close" @onclick="@Close_EditDetails">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <EditForm Model="mOrdDetls" OnValidSubmit="EditArtickle">
+                    <table >
+                        <tr>
+                            <td>
+                                ردیف
+                            </td>
+                            <td>
+                                <InputNumber class="form-control"  @bind-Value="@mOrdDetls.Row"/>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>
+                                کالا
+                            </td>
+                            <td>
+                            <InputText class="form-control" list="listMerch" @onblur="@SetMerchName" @bind-Value="@mOrdDetls.Merch_Code" />
+                            <label>@Merch_Name</label>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>
+                                شرح
+                            </td>
+                            <td>
+                                <InputText class="form-control" @bind-Value="@mOrdDetls.Descr" />
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>
+                                تعداد کل
+                            </td>
+                            <td>
+                                <InputNumber class="form-control" @onblur="@Kol_Change" @bind-Value="@mOrdDetls.MQty" />
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>
+                                تعداد جزء
+                            </td>
+                            <td>
+                                <InputNumber class="form-control" @onblur="@Joz_Change" @bind-Value="@mOrdDetls.Qty" />
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>
+                                فی
+                            </td>
+                            <td>
+                                <InputNumber class="form-control" @bind-Value="@mOrdDetls.Price" readonly/>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>
+                                قیمت
+                            </td>
+                            <td>
+                                <InputNumber class="form-control" @bind-Value="@mOrdDetls.Total" readonly />
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>
+                                درصد تخفیف
+                            </td>
+                            <td>
+                                <InputNumber class="form-control" @onblur="@Takhfif_Change" @bind-Value="@mOrdDetls.Discount" />
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>
+                                تخفیف
+                            </td>
+                            <td>
+                                <InputNumber class="form-control" @bind-Value="@mOrdDetls.Discount_Price" readonly />
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>
+                                
+                            </td>
+                            <td>
+                                <button type="button" class="btn btn-danger" data-dismiss="modal" @onclick="() => Close_EditDetails()">لغو</button>
+                                <input type="submit" class="btn btn-success" value="ثبت">
+                            </td>
+                        </tr>
+                    </table>
+                </EditForm>   
+            </div>
+        </div>
+    </div>
+</div>
+@code {
+    [Parameter]
+    public string Order_No { get; set; }
+    private string ModalDisplay = "none;";
+    private string ModalClass = "";
+    private string ModalDisplay_OrderDoc = "none;";
+    private string ModalClass_OrderDoc = "";
+    private string ModalDisplay_EditDetails = "none;";
+    private string ModalClass_EditDetails = "";
+    private bool ShowBackdrop = false;
+    private string mytoken = "";
+    private Orders_Doc od = new Orders_Doc();
+    private List<Orders_Details> lod = new List<Orders_Details>();
+    private Kernel k = new Kernel();
+    private MyApp myapp = new MyApp();
+    private MyAppWhere maw = new MyAppWhere();
+    private decimal sum_Price = 0;
+    private float sum_Qty = 0;
+    private float sum_MQty = 0;
+    private decimal sum_Discount_Price = 0;
+    private decimal Sum_Total = 0;
+    private Orders_Details mOrdDetls = new Orders_Details();
+    private List<Merchs> lmerch = new List<Merchs>();
+    private string Merch_Name = "";
+    
+    private myOrderDoc mod = new myOrderDoc();
+    private string Tarikh = new dttm().Get_Tarikh();
+    private MyAppOrderDoc maod = new MyAppOrderDoc();
+    private List<Accounts> LAcc = new List<Accounts>();
+    private List<Tafsil> LTafsil = new List<Tafsil>();
+    private List<Tafsil_Group> LTafsil_Group = new List<Tafsil_Group>();
+    private string Tafsil_Name = "";
+    private string Tafsil_Name_Show = "";
+    protected override async Task OnInitializedAsync()
+    {
+        myapp.Company = await sessionStorageService.GetItemAsync<string>("Company");
+        myapp.Year = await sessionStorageService.GetItemAsync<string>("Year");
+        mytoken = await sessionStorageService.GetItemAsync<string>("Token");
+        
+        maw.myapp = myapp;
+        maw.Wheres = " WHERE Order_No = '" + Order_No + "' ";
+
+        if(!String.IsNullOrEmpty(mytoken))
+        {
+            var myOrders = await k.GetOrders(maw,mytoken);
+            //lod = await k.GetOrder_Detailss(maw,mytoken);
+            await ResetDetails();
+            od = myOrders.FirstOrDefault();
+            maw.Wheres = " SELECT " + 
+                " Merch_Code, " + 
+                " Merch_Name, " +
+                " LMerch_Name, " +
+                " MinorUnit, " +
+                " MajorUnit, " +
+                " Major_Minor_Rate, " +
+                " Major_Minor_Related, " +
+                " Min_Qty, " +
+                " Max_Qty, " +
+                " Normal_Qty, " +
+                " Safety_Stock, " +
+                " Sales_Price, " +
+                " Last_Merch , " +
+                " Active, " +
+                " Acc_No, " + 
+                " Tafsil_No1, " +
+                " Merch_Descr, " +
+                " FastMoving , " +
+                " NormalMoving , " +
+                " SlowMoving , " +
+                " NoMoving , " +
+                " ID  " +
+                " FROM MERCHS " +
+                " WHERE Last_Merch = 1 AND Merch_Type1 = 1 And Active  = 1 And Sales_Price <> 0 ";
+            lmerch = await k.GetMerchs(maw,mytoken);
+        }
+        
+        maw.myapp = myapp;
+        maod.myapp = myapp;
+        maw.Wheres = " WHERE  People = 1 OR Cos = 1 ";
+        //Fill Tafsil_Group 
+        LTafsil_Group = await k.GetTafsil_Group(maw,mytoken);
+        //Fill Accout
+        //maw.Wheres = " WHERE Last_Acc = 1 ";
+        //LAcc = await k.GetAccounts(maw,mytoken);
+        //Fill Tafsil
+        //read tafsil_group
+        var gno = "";
+        foreach (var i in LTafsil_Group)
+        {
+            if(String.IsNullOrEmpty(gno))
+            {
+                gno = i.G_No;
+            }
+            else
+            {
+                gno +="," + i.G_No;
+            }
+        }
+        maw.Wheres = " WHERE G_NO IN(" + gno + ")";
+        LTafsil = await k.GetTafsil(maw,mytoken);
+        mod.Order_Date = Tarikh;
+        if(!String.IsNullOrEmpty(od.Tafsil_No1))
+        {
+            Tafsil_Name_Show = LTafsil.Where(m => m.Tafsil_No == od.Tafsil_No1).FirstOrDefault().Tafsil_Name;
+        }
+    }
+    protected async Task UpdateOrderDocs()
+    {
+        maod.myapp = myapp;
+        maod.Order_No = Order_No;
+        maod.Order_Date = mod.Order_Date;
+        maod.Order_Desc = mod.Order_Desc;
+        maod.Customer_Name = mod.Customer_Name;
+        maod.Acc_No = mod.Acc_No;
+        maod.Tafsil_No1 = mod.Tafsil_No1;
+        maod.Tafsil_No2 = mod.Tafsil_No2;
+        maod.Tafsil_No3 = mod.Tafsil_No3;
+
+        if(!String.IsNullOrEmpty(mytoken))
+        {
+            var result = await  k.UpdateOrders(maod,mytoken);
+            
+            maw.myapp = myapp;
+            maw.Wheres = " WHERE Order_No = '" + Order_No + "' ";
+            var myOrders = await k.GetOrders(maw,mytoken);
+            //lod = await k.GetOrder_Detailss(maw,mytoken);
+            od = myOrders.FirstOrDefault();
+            Tafsil_Name_Show = Tafsil_Name;
+            Close_OrderDoc();
+        }
+    }
+    protected async Task SetTafsilName()
+    {
+        var code = mod.Tafsil_No1;
+        if(String.IsNullOrEmpty(code))
+        {
+            return;
+        }
+        else
+        {
+            var check = LTafsil.Where(m => m.Tafsil_No == code).ToList();
+            if (check.Count > 0)
+            {
+                var taf = LTafsil.Where(m => m.Tafsil_No == code).FirstOrDefault();
+                Tafsil_Name = taf.Tafsil_Name;
+                mod.Customer_Name = taf.Tafsil_Name;
+            }
+            else
+            {
+                bool msg = await JsRuntime.InvokeAsync<bool>("alert", "کد مشتری معتبر نیست"); 
+                Tafsil_Name = "";
+                mod.Customer_Name = "";
+            }
+        }
+    }
+    protected async Task SetMerchName()
+    {
+        var code = mOrdDetls.Merch_Code;
+        if(String.IsNullOrEmpty(code))
+        {
+            return;
+        }
+        else
+        {
+            var check = lmerch.Where(m => m.Merch_Code == code).ToList();
+            if (check.Count > 0)
+            {
+                var merch = lmerch.Where(m => m.Merch_Code == code).FirstOrDefault();
+                Merch_Name = merch.Merch_Name;
+                mOrdDetls.Price = merch.Sales_Price;
+                mOrdDetls.MQty = 1;
+                mOrdDetls.Qty = merch.Major_Minor_Rate;
+                mOrdDetls.Total = merch.Sales_Price * merch.Major_Minor_Rate;
+            }
+            else
+            {
+                bool msg = await JsRuntime.InvokeAsync<bool>("alert", "کد کالا معتبر نیست"); 
+                Merch_Name = "";
+                mOrdDetls.Price = 0;
+                mOrdDetls.MQty = 1;
+                mOrdDetls.Qty = 0;
+                mOrdDetls.Total = 0;
+            }
+        }
+        
+    }   
+    protected void Kol_Change()
+    {
+        var code = mOrdDetls.Merch_Code;
+        var merch = lmerch.Where(m => m.Merch_Code == code).FirstOrDefault();
+        var rate = merch.Major_Minor_Rate;
+        
+        mOrdDetls.Qty = rate  * mOrdDetls.MQty;
+        mOrdDetls.Total = merch.Sales_Price * decimal.Parse(mOrdDetls.Qty.ToString());
+    }
+    protected void Joz_Change()
+    {
+        var code = mOrdDetls.Merch_Code;
+        var merch = lmerch.Where(m => m.Merch_Code == code).FirstOrDefault();
+        var rate = merch.Major_Minor_Rate;
+        
+        mOrdDetls.Total = merch.Sales_Price * decimal.Parse(mOrdDetls.Qty.ToString());
+        mOrdDetls.MQty = float.Parse(((mOrdDetls.Qty * mOrdDetls.MQty)/rate).ToString("0.00"));
+    }
+    protected void Takhfif_Change()
+    {
+        var code = mOrdDetls.Merch_Code;
+        var merch = lmerch.Where(m => m.Merch_Code == code).FirstOrDefault();
+        mOrdDetls.Discount_Price = ((mOrdDetls.Discount * mOrdDetls.Total)/100);
+    }
+    protected async Task AddDetails()
+    {
+        Takhfif_Change();
+        if(!String.IsNullOrEmpty(mytoken))
+        {
+            var m = new MyAppOrderDetails();
+            m.myapp = myapp;
+            m.Order_No = Order_No;
+            m.Row = mOrdDetls.Row;
+            m.Merch_Code = mOrdDetls.Merch_Code;
+            m.Descr = mOrdDetls.Descr;
+            m.MQty = mOrdDetls.MQty;
+            m.MQty_Inv = 0;
+            m.Qty= mOrdDetls.Qty;
+            m.Qty_Inv = 0;
+            m.Price = mOrdDetls.Price;
+            m.Total = mOrdDetls.Total;
+            m.Discount = mOrdDetls.Discount;
+            m.Discount_Price = mOrdDetls.Discount_Price;
+            m.Insert = true;
+            var result = await k.Save_OrderDetails(m,mytoken);
+            Console.WriteLine("result : " + result);
+            await ResetDetails();  
+            Close();
+        }
+    }
+    protected async Task EditArtickle()
+    {
+        Takhfif_Change();
+        if(!String.IsNullOrEmpty(mytoken))
+        {
+            var m = new MyAppOrderDetails();
+            m.myapp = myapp;
+            m.Order_No = Order_No;
+            m.Row = mOrdDetls.Row;
+            m.Merch_Code = mOrdDetls.Merch_Code;
+            m.Descr = mOrdDetls.Descr;
+            m.MQty = mOrdDetls.MQty;
+            m.MQty_Inv = 0;
+            m.Qty= mOrdDetls.Qty;
+            m.Qty_Inv = 0;
+            m.Price = mOrdDetls.Price;
+            m.Total = mOrdDetls.Total;
+            m.Discount = mOrdDetls.Discount;
+            m.Discount_Price = mOrdDetls.Discount_Price;
+            m.Insert = false;
+            var result = await k.Save_OrderDetails(m,mytoken);
+            Console.WriteLine("result : " + result);
+            await ResetDetails();  
+            Close_EditDetails();
+        }   
+    }
+    protected async Task DelDetails(int Row)
+    {
+        bool question = await JsRuntime.InvokeAsync<bool>("confirm", "آیا تمایل به حذف آرتیکل دارید؟"); 
+        if(question){
+            if(!String.IsNullOrEmpty(mytoken))
+            {
+                var m = new MyAppWhere();
+                m.myapp = myapp;
+                m.Wheres = " WHERE Order_No = '" + Order_No + "' AND [ROW] = " + Row.ToString() + "";
+                var result = await k.Delete_OrderDetails(m,mytoken);
+                Console.WriteLine("result : " + result);
+                m.Wheres = Order_No;
+                await k.Sort_OrderDetails(m,mytoken);
+                await ResetDetails();
+                //Close();
+            }
+        }
+    }
+    private async Task ResetDetails()
+    {
+        //return ;
+        lod = null;
+        lod = new List<Orders_Details>();
+        
+        
+        maw.myapp = myapp;
+        maw.Wheres = " WHERE Order_No = '" + Order_No + "' ";
+        
+        lod.Clear();
+        lod = await k.GetOrder_Detailss(maw,mytoken);   
+
+        sum_Discount_Price = 0;
+        sum_MQty= 0;
+        sum_Price =0;
+        sum_Qty = 0;
+        Sum_Total = 0;
+        foreach(var x in lod)
+        {
+            sum_MQty += x.MQty; 
+            sum_Qty  += x.Qty;
+            sum_Price += x.Price;
+            Sum_Total += x.Total;
+            sum_Discount_Price += x.Discount_Price;
+        }
+        
+    }
+    private async Task DeleteOrder()
+    {
+        bool question = await JsRuntime.InvokeAsync<bool>("confirm", "آیا تمایل به حذف سفارش دارید؟"); 
+        if(question){
+            if(!String.IsNullOrEmpty(mytoken))
+            {
+                maw.myapp = myapp;
+                maw.Wheres = " WHERE Order_No = '" + Order_No + "' ";
+                await k.Delete_Order(maw,mytoken); 
+                Navigation.NavigateTo("/Factorllist");  
+            }
+        }
+    }
+    private void Open()
+    {
+        mOrdDetls.Row= lod.Count()+ 1; 
+        mOrdDetls.Merch_Code = "";
+        Merch_Name = "";
+        mOrdDetls.Descr = "";
+        mOrdDetls.Price= 0;
+        mOrdDetls.Discount = 0;
+        mOrdDetls.Discount_Price= 0;
+        mOrdDetls.Qty = 0;
+        mOrdDetls.MQty = 0;
+        mOrdDetls.Qty_Inv =0;
+        mOrdDetls.MQty_Inv = 0;
+        ModalDisplay = "block;";
+        ModalClass = "Show";
+        ShowBackdrop = true;
+        StateHasChanged();
+    }
+    private void Close()
+    {
+        ModalDisplay = "none";
+        ModalClass = "";
+        ShowBackdrop = false;
+        StateHasChanged();
+    }
+    private void Open_OrderDoc()
+    {
+        mod.Order_No= Order_No;
+        mod.Order_Date = od.Order_Date;
+        mod.Order_Desc = od.Order_Desc;
+        mod.Customer_Name = od.Customer_Name;
+        mod.Tafsil_No1 = od.Tafsil_No1;
+
+        ModalDisplay_OrderDoc = "block;";
+        ModalClass_OrderDoc = "Show";
+        ShowBackdrop = true;
+        StateHasChanged();
+    }
+    private void Close_OrderDoc()
+    {
+        ModalDisplay_OrderDoc = "none";
+        ModalClass_OrderDoc = "";
+        ShowBackdrop = false;
+        StateHasChanged();
+    }
+    private void Open_EditDetails(int Row)
+    {
+        var x  = lod.Where(m => m.Row == Row).FirstOrDefault();
+        mOrdDetls.Row= x.Row; 
+        mOrdDetls.Merch_Code = x.Merch_Code;
+        Merch_Name = x.Merch_Name;
+        mOrdDetls.Descr = x.Descr;
+        mOrdDetls.Price= x.Price;
+        mOrdDetls.Total = x.Total;
+        mOrdDetls.Discount = x.Discount;
+        mOrdDetls.Discount_Price= x.Discount_Price;
+        mOrdDetls.Qty = x.Qty;
+        mOrdDetls.MQty = x.MQty;
+        mOrdDetls.Qty_Inv =x.Qty_Inv;
+        mOrdDetls.MQty_Inv = x.MQty_Inv;
+        ModalDisplay_EditDetails = "block;";
+        ModalClass_EditDetails = "Show";
+        ShowBackdrop = true;
+        StateHasChanged();
+    }
+    private void Close_EditDetails()
+    {
+        ModalDisplay_EditDetails = "none";
+        ModalClass_EditDetails = "";
+        ShowBackdrop = false;
+        StateHasChanged();
+    }
+}

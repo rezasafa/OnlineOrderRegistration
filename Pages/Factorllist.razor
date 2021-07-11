@@ -1,0 +1,176 @@
+@page "/Factorllist"
+@using Blazored.SessionStorage
+@inject ISessionStorageService sessionStorageService
+<div>
+    <EditForm Model="@mso" OnSubmit="@SearchFactor">
+        <DataAnnotationsValidator />
+        <ValidationSummary />
+        <div class="row">
+            <div class="col-md-3">
+                <label>از تاریخ</label>
+                <InputText class="form-control"  id="txtAzTarikh" placeholder="1400/01/01" @bind-Value="@mso.StartDate" />
+            </div>
+            <div class="col-md-3">
+                <label>تا تاریخ</label>
+                <InputText class="form-control"  id="txtTaTarikh" placeholder="1400/12/30" @bind-Value="@mso.EndDate" />
+            </div>
+            <div class="col-md-3">
+                <label>نام مشتری</label>
+                <InputText class="form-control"  id="txtCustomer" placeholder="نام مشتری" @bind-Value="@mso.CustomerName" list="listTafsil" />
+                <datalist id="listTafsil">
+                    @foreach(var item in LTafsil)
+                    {
+                        <option value="@item.Tafsil_No">@item.Tafsil_Name</option>
+                    }
+                </datalist>
+            </div>
+            <div class="col-md-3">
+                <button class="btn btn-success" type="submit">جستجو</button>
+            </div>
+        </div>
+    </EditForm>
+    
+    <h4>
+        لیست سفارش ها
+    </h4>
+    <div>
+        <table class="table">
+            <thead class="thead-dark">
+                <tr>
+                    <th>
+                        <a class="btn btn-info oi oi-plus" href="/NewFactor"></a>
+                    </th>
+                    <th>
+                        شماره سفارش
+                    </th>
+                    <th>
+                        تاریخ سفارش
+                    </th>
+                    <th>
+                        نام مشتری
+                    </th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var item in lod)
+                {
+                    <tr>
+                        <td>
+                            @{
+                                if(Today == item.Order_Date)
+                                {
+                                    <a class="btn btn-danger oi oi-pencil" href="/NewFactorDetails/@item.Order_No">
+                                    </a>
+                                }
+                            }
+                        </td>
+                        <td>
+                            <a class="btn btn-info" href="/ShowFactor/@item.Order_No">@item.Order_No</a>
+                        </td>
+                        <td>@item.Order_Date</td>
+                        <td>@item.Customer_Name</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+@code {
+    private string mytoken = "";
+    private List<Orders_Doc> lod = new List<Orders_Doc>();
+    private Kernel k = new Kernel();
+    private MyApp myapp = new MyApp();
+    private MyAppWhere maw = new MyAppWhere();
+    private string Today = "";
+    private string myuser = "";
+    private mySearcOrders mso = new mySearcOrders();
+    private List<Tafsil> LTafsil = new List<Tafsil>();
+    private List<Tafsil_Group> LTafsil_Group = new List<Tafsil_Group>();
+    
+
+    protected override async Task OnInitializedAsync()
+    {
+        mso.CustomerName = "";
+        mso.StartDate = new dttm().Get_Tarikh().Split("/")[0] + "/01/01";
+        mso.EndDate = new dttm().Get_Tarikh().Split("/")[0] + "/12/30";
+        Today = new dttm().Get_Tarikh();
+        myapp.Company = await sessionStorageService.GetItemAsync<string>("Company");
+        myapp.Year = await sessionStorageService.GetItemAsync<string>("Year");
+        mytoken = await sessionStorageService.GetItemAsync<string>("Token");
+        myuser  = await sessionStorageService.GetItemAsync<string>("User");
+        string where = " WHERE ( 1 = 1 ) ";
+        maw.myapp = myapp;
+        if(myuser == "admin")
+        {
+            maw.Wheres = where +  "  ";
+        }
+        else
+        {
+            maw.Wheres = where + " AND  UserCreate = N'"  + myuser + "'";
+        }
+        
+        if(!String.IsNullOrEmpty(mytoken))
+        {
+            lod = await k.GetOrders(maw,mytoken);
+        }
+
+        maw.Wheres = " WHERE  People = 1 OR Cos = 1 ";
+        //Fill Tafsil_Group 
+        LTafsil_Group = await k.GetTafsil_Group(maw,mytoken);
+        var gno = "";
+        foreach (var i in LTafsil_Group)
+        {
+            if(String.IsNullOrEmpty(gno))
+            {
+                gno = i.G_No;
+            }
+            else
+            {
+                gno +="," + i.G_No;
+            }
+        }
+        maw.Wheres = " WHERE G_NO IN(" + gno + ")";
+        LTafsil = await k.GetTafsil(maw,mytoken);
+    }
+    protected async Task SearchFactor()
+    {
+        myapp.Company = await sessionStorageService.GetItemAsync<string>("Company");
+        myapp.Year = await sessionStorageService.GetItemAsync<string>("Year");
+        mytoken = await sessionStorageService.GetItemAsync<string>("Token");
+        myuser  = await sessionStorageService.GetItemAsync<string>("User");
+        string where = " WHERE ( 1 = 1 ) ";
+        /*
+        Console.WriteLine("az Tarikh : " + mso.StartDate);
+        Console.WriteLine("ta Tarikh : " + mso.EndDate);
+        Console.WriteLine("CustomerName : " + mso.CustomerName);
+        */
+        if (!String.IsNullOrEmpty(mso.CustomerName)) 
+            where += " AND  Customer_Name LIKE N'%" + mso.CustomerName + "%'";
+        if (!String.IsNullOrEmpty(mso.StartDate) &&  String.IsNullOrEmpty(mso.EndDate)) 
+            where += " AND  Order_Date = N'" + mso.StartDate + "'";
+        if ( String.IsNullOrEmpty(mso.StartDate) && !String.IsNullOrEmpty(mso.EndDate)) 
+            where += " AND  Order_Date = N'" + mso.EndDate + "'";
+        if (!String.IsNullOrEmpty(mso.StartDate) && !String.IsNullOrEmpty(mso.EndDate)) 
+            where += " AND  Order_Date BETWEEN N'" + mso.StartDate + "' AND N'" + mso.EndDate + "' ";
+        
+        maw.myapp = myapp;
+
+        if(myuser == "admin")
+        {
+            maw.Wheres = where +  "  ";
+        }
+        else
+        {
+            maw.Wheres = where + " AND  UserCreate = N'"  + myuser + "'";
+        }
+        
+        //Console.WriteLine("WHERE  = " + where);
+
+        
+        if(!String.IsNullOrEmpty(mytoken))
+        {
+            lod = await k.GetOrders(maw,mytoken);
+        } 
+        
+    }
+}

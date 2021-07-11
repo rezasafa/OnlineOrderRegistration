@@ -1,0 +1,158 @@
+@page "/Newfactor"
+@using Blazored.SessionStorage
+@inject ISessionStorageService sessionStorageService
+@inject NavigationManager Navigation
+@inject IJSRuntime JsRuntime
+<div>
+    <div>
+        <EditForm Model="@mod" OnValidSubmit="@CheckSubmit">
+            <DataAnnotationsValidator />
+            <ValidationSummary />
+            <table>
+                <tbody>
+                    <tr>
+                        <td>
+                            شماره سفارش
+                        </td>
+                        <td>
+                            <InputText class="form-control" @bind-Value="@mod.Order_No" readonly />
+                        </td>
+                        <td>
+                            تاریخ سفارش
+                        </td>
+                        <td>
+                            <InputText class="form-control" @bind-Value="@mod.Order_Date" placeholder="@Tarikh" />
+                            <ValidationMessage For="@(()=>mod.Order_Date)" />
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            شرح
+                        </td>
+                        <td colspan="3">
+                            <InputText class="form-control" @bind-Value="@mod.Order_Desc"  />
+                            <ValidationMessage For="@(()=>mod.Order_Desc)" />
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            حساب مشتری
+                        </td>
+                        <td>
+                            <InputText class="form-control" list="listTafsil" @onblur="@SetTafsilName" @bind-Value="@mod.Tafsil_No1"  />
+                            <ValidationMessage For="@(()=>mod.Tafsil_No1)" />
+                            <datalist id="listTafsil">
+                                @foreach(var item in LTafsil)
+                                {
+                                    <option value="@item.Tafsil_No">@item.Tafsil_Name</option>
+                                }
+                            </datalist>
+                        </td>
+                        <td colspan="2">
+                            <label>@Tafsil_Name</label>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            نام مشتری
+                        </td>
+                        <td colspan="3">
+                            <InputText class="form-control" @bind-Value="@mod.Customer_Name"  />
+                        </td>
+                    </tr>
+                    <tr>
+                        <td colspan="4">
+                            <input type="submit" class="btn btn-success" id="btnSave" value="ذخیره" /> 
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </EditForm>
+    </div>
+</div>
+
+@code {
+    private myOrderDoc mod = new myOrderDoc();
+    private string Tarikh = new dttm().Get_Tarikh();
+    private string mytoken = "";
+    private Orders_Doc od = new Orders_Doc();
+    private Kernel k = new Kernel();
+    private MyApp myapp = new MyApp();
+    private MyAppWhere maw = new MyAppWhere();
+    private MyAppOrderDoc maod = new MyAppOrderDoc();
+    private List<Accounts> LAcc = new List<Accounts>();
+    private List<Tafsil> LTafsil = new List<Tafsil>();
+    private List<Tafsil_Group> LTafsil_Group = new List<Tafsil_Group>();
+    private string Tafsil_Name = "";
+    protected async Task CheckSubmit()
+    {
+        maod.myapp = myapp;
+        maod.Order_Date = mod.Order_Date;
+        maod.Order_Desc = mod.Order_Desc;
+        maod.Customer_Name = mod.Customer_Name;
+        maod.Tafsil_No1 = mod.Tafsil_No1;
+        
+
+        if(!String.IsNullOrEmpty(mytoken))
+        {
+            var myOrders = await  k.Insert_OrderDoc(maod,mytoken);
+            Navigation.NavigateTo("NewFactorDetails/" + myOrders);
+        }
+    }
+    protected override async Task OnInitializedAsync()
+    {
+
+        myapp.Company = await sessionStorageService.GetItemAsync<string>("Company");
+        myapp.Year = await sessionStorageService.GetItemAsync<string>("Year");
+        mytoken = await sessionStorageService.GetItemAsync<string>("Token");
+        maw.myapp = myapp;
+        maod.myapp = myapp;
+        maw.Wheres = " WHERE  People = 1 OR Cos = 1 ";
+        //Fill Tafsil_Group 
+        LTafsil_Group = await k.GetTafsil_Group(maw,mytoken);
+        //Fill Accout
+        //maw.Wheres = " WHERE Last_Acc = 1 ";
+        //LAcc = await k.GetAccounts(maw,mytoken);
+        //Fill Tafsil
+        //read tafsil_group
+        var gno = "";
+        foreach (var i in LTafsil_Group)
+        {
+            if(String.IsNullOrEmpty(gno))
+            {
+                gno = i.G_No;
+            }
+            else
+            {
+                gno +="," + i.G_No;
+            }
+        }
+        maw.Wheres = " WHERE G_NO IN(" + gno + ")";
+        LTafsil = await k.GetTafsil(maw,mytoken);
+        mod.Order_Date = Tarikh;
+    }
+    protected async Task SetTafsilName()
+    {
+        var code = mod.Tafsil_No1;
+        if(String.IsNullOrEmpty(code))
+        {
+            return;
+        }
+        else
+        {
+            var check = LTafsil.Where(m => m.Tafsil_No == code).ToList();
+            if (check.Count > 0)
+            {
+                var taf = LTafsil.Where(m => m.Tafsil_No == code).FirstOrDefault();
+                Tafsil_Name = taf.Tafsil_Name;
+                mod.Customer_Name = taf.Tafsil_Name;
+            }
+            else
+            {
+                bool msg = await JsRuntime.InvokeAsync<bool>("alert", "کد مشتری معتبر نیست"); 
+                Tafsil_Name = "";
+                mod.Customer_Name = "";
+            }
+        }
+    }
+}

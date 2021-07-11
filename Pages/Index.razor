@@ -1,0 +1,39 @@
+﻿@inherits LayoutComponentBase
+@using Microsoft.AspNetCore.Authentication
+@using Microsoft.AspNetCore.Components.Authorization
+@inject AuthenticationStateProvider asp
+@inject NavigationManager Navigation
+@page "/"
+<CascadingAuthenticationState>
+    <AuthorizeView>
+        <Authorized>
+            <div class="row">
+                <div class="col-md-2 myTelegramTourBoxs">
+                    <a href="/NewFactor">
+                        <img src="/img/order.png" style="height: 180px;width: 180px;" />
+                        <p>سفارش جدید</p>
+                    </a>
+                </div>
+                <div class="col-md-2 myTelegramTourBoxs">
+                    <a href="/Factorllist">
+                        <img src="/img/order list.png" style="height: 180px;width: 180px;"/>
+                        <p>لیست سفارشات</p>
+                    </a>
+                </div>
+                @* <div class="col-md-2 myTelegramTourBoxs">
+                    <a href="">
+                        <img src="" style="height: 180px;width: 180px;"/>
+                        <p>خروج</p>
+                    </a>
+                </div> *@
+            </div>
+        </Authorized>
+        <NotAuthorized>
+            <Login />
+        </NotAuthorized>
+    </AuthorizeView>
+</CascadingAuthenticationState>
+
+@* <h1>ثبت سفارش آنلاین</h1>
+
+<h3>سیستم یکپارچه مالی سپهر</h3> *@

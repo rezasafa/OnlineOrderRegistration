@@ -1,0 +1,168 @@
+@page "/ShowFactor/{Order_No}"
+@using Blazored.SessionStorage
+@inject ISessionStorageService sessionStorageService
+<div>
+    <div>
+        <table>
+            <tbody>
+                <tr>
+                    <td>
+                        شماره سفارش
+                    </td>
+                    <td>
+                        <input type="text" class="form-control" value="@od.Order_No" readonly />
+                    </td>
+                    <td>
+                        تاریخ سفارش
+                    </td>
+                    <td>
+                        <input type="text" class="form-control" value="@od.Order_Date" readonly />
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        شرح
+                    </td>
+                    <td colspan="3">
+                        <input type="text" class="form-control" value="@od.Order_Desc" readonly />
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        نام مشتری
+                    </td>
+                    <td colspan="3">
+                        <input type="text" class="form-control" value="@od.Customer_Name" readonly />
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+    <div>
+        <table class="table">
+            <thead class="thead-dark">
+                <tr>
+                    <th>
+                        ردیف
+                    </th>
+                    <th>
+                        کد کالا
+                    </th>
+                    <th>
+                        نام کالا
+                    </th>
+                    <th>
+                        شرح
+                    </th>
+                    <th>
+                        واحد کل
+                    </th>
+                    <th>
+                        تعداد کل
+                    </th> 
+                    <th>
+                        واحد جزء
+                    </th>
+                    <th>
+                        تعداد
+                    </th>
+                    <th>
+                        فی
+                    </th>
+                    <th>
+                        قیمت
+                    </th>
+                    <th>
+                        درصد تخفیف
+                    </th>
+                    <th>
+                        تخفیف
+                    </th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var item in lod)
+                {
+                    <tr>
+                        <td>@item.Row</td>
+                        <td>@item.Merch_Code</td>
+                        <td>@item.Merch_Name</td>
+                        <td>@item.Descr</td>
+                        <td>@item.MajorUnit</td>
+                        <td>@item.MQty</td>
+                        <td>@item.MinorUnit</td>
+                        <td>@item.Qty</td>
+                        <td>@String.Format("{0:N0}", item.Price)</td>
+                        <td>@String.Format("{0:N0}", item.Total)</td>
+                        <td>@item.Discount</td>
+                        <td>@String.Format("{0:N0}", item.Discount_Price)</td>
+                    </tr>
+                    {
+                        sum_MQty += item.MQty;
+                        sum_Qty += item.Qty;
+                        sum_Price += item.Price;
+                        Sum_Total += item.Total;
+                        sum_Discount_Price += item.Discount_Price;
+                    }
+                }
+                <tr style="background-color: black; color: white;">
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td>جمع</td>
+                    <td>@sum_MQty</td>
+                    <td></td> 
+                    <td>@sum_Qty</td>
+                    <td>@String.Format("{0:N0}", sum_Price)</td>
+                    <td>@String.Format("{0:N0}", Sum_Total)</td>
+                    <td></td>
+                    <td>@String.Format("{0:N0}", sum_Discount_Price)</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+@code {
+    [Parameter]
+    public string Order_No {get;set;}
+    private string mytoken = "";
+    private string myuser = "";
+    private Orders_Doc od = new Orders_Doc();
+    private List<Orders_Details> lod = new List<Orders_Details>();
+    private Kernel k = new Kernel();
+    private MyApp myapp = new MyApp();
+    private MyAppWhere maw = new MyAppWhere();
+    private decimal sum_Price = 0;
+    private float sum_MQty = 0;
+    private float sum_Qty = 0;
+    private decimal sum_Discount_Price = 0;
+    private decimal Sum_Total = 0;
+    protected override async Task OnInitializedAsync()
+    {
+        myapp.Company = await sessionStorageService.GetItemAsync<string>("Company");
+        myapp.Year = await sessionStorageService.GetItemAsync<string>("Year");
+        mytoken = await sessionStorageService.GetItemAsync<string>("Token");
+        myuser  = await sessionStorageService.GetItemAsync<string>("User");
+
+        maw.myapp = myapp;
+        if(myuser == "admin")
+        {
+            maw.Wheres = " WHERE Order_No = '" + Order_No + "'  ";
+        }
+        else
+        {
+            maw.Wheres = " WHERE Order_No = '" + Order_No + "' AND UserCreate = N'"  + myuser + "'";
+        }
+
+        //Console.WriteLine(mytoken);
+
+        if(!String.IsNullOrEmpty(mytoken))
+        {
+            var myOrders = await k.GetOrders(maw,mytoken);
+            lod = await k.GetOrder_Detailss(maw,mytoken);
+            od = myOrders.FirstOrDefault();
+        }
+        
+    }
+}
